@@ -28,22 +28,13 @@
         const gameDate = f[0];
 
         if (gameDate <= selectedDateStr) {
-          const vTeam = f[3];
-          const hTeam = f[6];
-          const vR = parseInt(f[9], 10);
-          const hR = parseInt(f[10], 10);
-
+          const vTeam = f[3], hTeam = f[6];
+          const vR = parseInt(f[9], 10), hR = parseInt(f[10], 10);
           if (stats[vTeam] && stats[hTeam] && !isNaN(vR) && !isNaN(hR)) {
-            if (vR > hR) {
-              stats[vTeam].w++;
-              stats[hTeam].l++;
-            } else if (hR > vR) {
-              stats[hTeam].w++;
-              stats[vTeam].l++;
-            }
+            if (vR > hR) { stats[vTeam].w++; stats[hTeam].l++; }
+            else if (hR > vR) { stats[hTeam].w++; stats[vTeam].l++; }
           }
         }
-
         if (gameDate === selectedDateStr) dailyGames.push(f);
       });
 
@@ -74,8 +65,7 @@
       rows.sort((a, b) => {
         const pctA = parseFloat(a.querySelector(".p").textContent);
         const pctB = parseFloat(b.querySelector(".p").textContent);
-        if (pctB !== pctA) return pctB - pctA;
-        return parseInt(b.querySelector(".w").textContent) - parseInt(a.querySelector(".w").textContent);
+        return pctB !== pctA ? pctB - pctA : parseInt(b.querySelector(".w").textContent) - parseInt(a.querySelector(".w").textContent);
       });
       rows.forEach((row) => tbody.appendChild(row));
     });
@@ -91,8 +81,7 @@
 
     let html = "";
     games.forEach(g => {
-      const vTeam = g[3], hTeam = g[6];
-      const vLine = g[19], hLine = g[20];
+      const vTeam = g[3], hTeam = g[6], vLine = g[19], hLine = g[20];
       const vR = g[9], vH = g[22], vE = g[46], vLOB = g[37];
       const hR = g[10], hH = g[50], hE = g[74], hLOB = g[65];
       const maxInnings = Math.max(vLine.length, hLine.length);
@@ -109,14 +98,8 @@
 
   function renderWildcard(stats) {
     const LEAGUE_MAP = {
-      AL: {
-        divs: ["AL_EAST", "AL_CENTRAL", "AL_WEST"],
-        teams: ["BAL", "NYA", "BOS", "TBA", "TOR", "CLE", "KCA", "DET", "MIN", "CHA", "HOU", "SEA", "TEX", "ATH", "ANA"]
-      },
-      NL: {
-        divs: ["NL_EAST", "NL_CENTRAL", "NL_WEST"],
-        teams: ["PHI", "ATL", "NYN", "WAS", "MIA", "MIL", "CHN", "SLN", "CIN", "PIT", "LAN", "SDN", "ARI", "SFN", "COL"]
-      }
+      AL: { divs: ["AL_EAST", "AL_CENTRAL", "AL_WEST"], teams: ["BAL", "NYA", "BOS", "TBA", "TOR", "CLE", "KCA", "DET", "MIN", "CHA", "HOU", "SEA", "TEX", "ATH", "ANA"] },
+      NL: { divs: ["NL_EAST", "NL_CENTRAL", "NL_WEST"], teams: ["PHI", "ATL", "NYN", "WAS", "MIA", "MIL", "CHN", "SLN", "CIN", "PIT", "LAN", "SDN", "ARI", "SFN", "COL"] }
     };
 
     ["AL", "NL"].forEach(lg => {
@@ -137,22 +120,12 @@
       const tbody = document.getElementById(`${lg}_WILDCARD`);
       tbody.innerHTML = "";
 
-      const baseW = wcTeams[2]?.w || 0;
-      const baseL = wcTeams[2]?.l || 0;
+      const baseW = wcTeams[2]?.w || 0, baseL = wcTeams[2]?.l || 0;
 
       wcTeams.forEach((team, i) => {
         const teamName = document.getElementById(team.id).cells[0].textContent;
-        let gb = "—";
-        if (i > 2) gb = ((baseW - team.w) + (team.l - baseL)) / 2;
-
-        const row = `<tr>
-          <td>${teamName}</td>
-          <td>${team.w}</td>
-          <td>${team.l}</td>
-          <td>${team.p.toFixed(3)}</td>
-          <td>${gb}</td>
-        </tr>`;
-        tbody.innerHTML += row;
+        let gb = i <= 2 ? "—" : ((baseW - team.w) + (team.l - baseL)) / 2;
+        tbody.innerHTML += `<tr><td>${teamName}</td><td>${team.w}</td><td>${team.l}</td><td>${team.p.toFixed(3)}</td><td>${gb}</td></tr>`;
       });
     });
   }
