@@ -25,14 +25,13 @@
 
       lines.forEach((line) => {
         const f = line.split(",").map((val) => val.replace(/"/g, ""));
-        const gameDate = f[0]; // Field 1
+        const gameDate = f[0];
 
-        // Cumulative Standings Logic
         if (gameDate <= selectedDateStr) {
-          const vTeam = f[3]; // Field 4
-          const hTeam = f[6]; // Field 7
-          const vR = parseInt(f[9], 10);  // Field 10
-          const hR = parseInt(f[10], 10); // Field 11
+          const vTeam = f[3];
+          const hTeam = f[6];
+          const vR = parseInt(f[9], 10);
+          const hR = parseInt(f[10], 10);
 
           if (stats[vTeam] && stats[hTeam] && !isNaN(vR) && !isNaN(hR)) {
             if (vR > hR) {
@@ -45,7 +44,6 @@
           }
         }
 
-        // Daily Box Score Logic
         if (gameDate === selectedDateStr) dailyGames.push(f);
       });
 
@@ -99,7 +97,7 @@
       const hR = g[10], hH = g[50], hE = g[74], hLOB = g[65];
       const maxInnings = Math.max(vLine.length, hLine.length);
 
-      html += `<table border="1" style="margin-bottom: 20px; border-collapse: collapse;">
+      html += `<table border="1" style="margin-bottom: 20px; margin-right: 20px; border-collapse: collapse; display: inline-table;">
         <thead><tr><th>Team</th>${Array.from({length: maxInnings}).map((_, i) => `<th>${i+1}</th>`).join('')}<th>R</th><th>H</th><th>E</th><th>LOB</th></tr></thead>
         <tbody>
           <tr><td>${vTeam}</td>${vLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}<td><strong>${vR}</strong></td><td>${vH}</td><td>${vE}</td><td>${vLOB}</td></tr>
@@ -109,7 +107,7 @@
     container.innerHTML = html;
   }
 
-   function renderWildcard(stats) {
+  function renderWildcard(stats) {
     const LEAGUE_MAP = {
       AL: {
         divs: ["AL_EAST", "AL_CENTRAL", "AL_WEST"],
@@ -139,7 +137,6 @@
       const tbody = document.getElementById(`${lg}_WILDCARD`);
       tbody.innerHTML = "";
 
-      // 3rd WC spot for GB calculation
       const baseW = wcTeams[2]?.w || 0;
       const baseL = wcTeams[2]?.l || 0;
 
