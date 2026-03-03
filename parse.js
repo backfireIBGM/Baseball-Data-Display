@@ -51,6 +51,7 @@
 
       renderStandings(stats);
       renderDailyBoxScores(dailyGames);
+      renderWildcard(stats);
     } catch (err) {
       console.error("Data error:", err);
     }
@@ -106,6 +107,57 @@
         </tbody></table>`;
     });
     container.innerHTML = html;
+  }
+
+   function renderWildcard(stats) {
+    const LEAGUE_MAP = {
+      AL: {
+        divs: ["AL_EAST", "AL_CENTRAL", "AL_WEST"],
+        teams: ["BAL", "NYA", "BOS", "TBA", "TOR", "CLE", "KCA", "DET", "MIN", "CHA", "HOU", "SEA", "TEX", "ATH", "ANA"]
+      },
+      NL: {
+        divs: ["NL_EAST", "NL_CENTRAL", "NL_WEST"],
+        teams: ["PHI", "ATL", "NYN", "WAS", "MIA", "MIL", "CHN", "SLN", "CIN", "PIT", "LAN", "SDN", "ARI", "SFN", "COL"]
+      }
+    };
+
+    ["AL", "NL"].forEach(lg => {
+      const leaders = new Set();
+      LEAGUE_MAP[lg].divs.forEach(divId => {
+        const divRows = document.getElementById(divId).querySelectorAll("tr");
+        if (divRows.length > 0) leaders.add(divRows[0].id);
+      });
+
+      const wcTeams = LEAGUE_MAP[lg].teams
+        .filter(id => !leaders.has(id))
+        .map(id => {
+          const w = stats[id].w, l = stats[id].l;
+          return { id, w, l, p: (w + l > 0) ? (w / (w + l)) : 0 };
+        })
+        .sort((a, b) => b.p - a.p || b.w - a.w);
+
+      const tbody = document.getElementById(`${lg}_WILDCARD`);
+      tbody.innerHTML = "";
+
+      // 3rd WC spot for GB calculation
+      const baseW = wcTeams[2]?.w || 0;
+      const baseL = wcTeams[2]?.l || 0;
+
+      wcTeams.forEach((team, i) => {
+        const teamName = document.getElementById(team.id).cells[0].textContent;
+        let gb = "—";
+        if (i > 2) gb = ((baseW - team.w) + (team.l - baseL)) / 2;
+
+        const row = `<tr>
+          <td>${teamName}</td>
+          <td>${team.w}</td>
+          <td>${team.l}</td>
+          <td>${team.p.toFixed(3)}</td>
+          <td>${gb}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
