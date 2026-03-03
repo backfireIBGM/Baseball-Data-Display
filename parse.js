@@ -25,14 +25,27 @@
 
       lines.forEach((line) => {
         const f = line.split(",").map((val) => val.replace(/"/g, ""));
-        const gameDate = f[0];
+        const gameDate = f[0]; // Field 1
 
+        // Cumulative Standings Logic
         if (gameDate <= selectedDateStr) {
-          const vTeam = f[3], hTeam = f[6], vR = parseInt(f[9]), hR = parseInt(f[10]);
+          const vTeam = f[3]; // Field 4
+          const hTeam = f[6]; // Field 7
+          const vR = parseInt(f[9], 10);  // Field 10
+          const hR = parseInt(f[10], 10); // Field 11
+
           if (stats[vTeam] && stats[hTeam] && !isNaN(vR) && !isNaN(hR)) {
-            vR > hR ? (stats[vTeam].w++, stats[hTeam].l++) : (stats[hTeam].w++, stats[vTeam].l++);
+            if (vR > hR) {
+              stats[vTeam].w++;
+              stats[hTeam].l++;
+            } else if (hR > vR) {
+              stats[hTeam].w++;
+              stats[vTeam].l++;
+            }
           }
         }
+
+        // Daily Box Score Logic
         if (gameDate === selectedDateStr) dailyGames.push(f);
       });
 
@@ -59,7 +72,12 @@
       const tbody = document.getElementById(id);
       if (!tbody) return;
       const rows = Array.from(tbody.querySelectorAll("tr"));
-      rows.sort((a, b) => parseFloat(b.querySelector(".p").textContent) - parseFloat(a.querySelector(".p").textContent));
+      rows.sort((a, b) => {
+        const pctA = parseFloat(a.querySelector(".p").textContent);
+        const pctB = parseFloat(b.querySelector(".p").textContent);
+        if (pctB !== pctA) return pctB - pctA;
+        return parseInt(b.querySelector(".w").textContent) - parseInt(a.querySelector(".w").textContent);
+      });
       rows.forEach((row) => tbody.appendChild(row));
     });
   }
@@ -76,47 +94,20 @@
     games.forEach(g => {
       const vTeam = g[3], hTeam = g[6];
       const vLine = g[19], hLine = g[20];
-      
-      // Visitor Stats (Corrected Indices)
-      const vR = g[9];
-      const vH = g[21]; 
-      const vE = g[22]; 
-      const vLOB = g[30];
-
-      // Home Stats (Corrected Indices)
-      const hR = g[10];
-      const hH = g[48]; 
-      const hE = g[49]; 
-      const hLOB = g[57];
-
+      const vR = g[9], vH = g[22], vE = g[46], vLOB = g[37];
+      const hR = g[10], hH = g[50], hE = g[74], hLOB = g[65];
       const maxInnings = Math.max(vLine.length, hLine.length);
 
       html += `<table border="1" style="margin-bottom: 20px; border-collapse: collapse;">
-        <thead>
-          <tr bgcolor="#eeeeee">
-            <th>Team</th>
-            ${Array.from({length: maxInnings}).map((_, i) => `<th>${i+1}</th>`).join('')}
-            <th>R</th><th>H</th><th>E</th><th>LOB</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Team</th>${Array.from({length: maxInnings}).map((_, i) => `<th>${i+1}</th>`).join('')}<th>R</th><th>H</th><th>E</th><th>LOB</th></tr></thead>
         <tbody>
-          <tr>
-            <td>${vTeam}</td>
-            ${vLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}
-            <td><strong>${vR}</strong></td><td>${vH}</td><td>${vE}</td><td>${vLOB}</td>
-          </tr>
-          <tr>
-            <td>${hTeam}</td>
-            ${hLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}
-            <td><strong>${hR}</strong></td><td>${hH}</td><td>${hE}</td><td>${hLOB}</td>
-          </tr>
-        </tbody>
-      </table>`;
+          <tr><td>${vTeam}</td>${vLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}<td><strong>${vR}</strong></td><td>${vH}</td><td>${vE}</td><td>${vLOB}</td></tr>
+          <tr><td>${hTeam}</td>${hLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}<td><strong>${hR}</strong></td><td>${hH}</td><td>${hE}</td><td>${hLOB}</td></tr>
+        </tbody></table>`;
     });
     container.innerHTML = html;
   }
 
-  // Ensure DOM is ready before adding listeners
   document.addEventListener("DOMContentLoaded", () => {
     const picker = document.getElementById("datePicker");
     if (picker) {
