@@ -4,15 +4,26 @@
     "HOU", "SEA", "TEX", "ATH", "ANA", "PHI", "ATL", "NYN", "WAS", "MIA",
     "MIL", "CHN", "SLN", "CIN", "PIT", "LAN", "SDN", "ARI", "SFN", "COL"
   ];
+
+  const TEAM_NAMES = {
+    "BAL": "Baltimore Orioles", "NYA": "New York Yankees", "BOS": "Boston Red Sox",
+    "TBA": "Tampa Bay Rays", "TOR": "Toronto Blue Jays", "CLE": "Cleveland Guardians",
+    "KCA": "Kansas City Royals", "DET": "Detroit Tigers", "MIN": "Minnesota Twins",
+    "CHA": "Chicago White Sox", "HOU": "Houston Astros", "SEA": "Seattle Mariners",
+    "TEX": "Texas Rangers", "ATH": "Sacramento Athletics", "ANA": "L.A. Angels",
+    "PHI": "Philadelphia Phillies", "ATL": "Atlanta Braves", "NYN": "New York Mets",
+    "WAS": "Washington Nationals", "MIA": "Miami Marlins", "MIL": "Milwaukee Brewers",
+    "CHN": "Chicago Cubs", "SLN": "St. Louis Cardinals", "CIN": "Cincinnati Reds",
+    "PIT": "Pittsburgh Pirates", "LAN": "L.A. Dodgers", "SDN": "San Diego Padres",
+    "ARI": "Arizona Diamondbacks", "SFN": "San Francisco Giants", "COL": "Colorado Rockies"
+  };
+
   const DIV_IDS = ["AL_EAST", "AL_CENTRAL", "AL_WEST", "NL_EAST", "NL_CENTRAL", "NL_WEST"];
 
   async function updatePage() {
     const picker = document.getElementById("datePicker");
-    const display = document.getElementById("displayDate");
     if (!picker) return;
-
     const selectedDateStr = picker.value.replace(/-/g, "");
-    if (display) display.textContent = picker.value;
 
     try {
       const response = await fetch("data2025.txt");
@@ -73,27 +84,54 @@
 
   function renderDailyBoxScores(games) {
     const container = document.getElementById("game-scores-container");
-    if (!container) return;
+    const template = document.getElementById("game-score-template");
+    if (!container || !template) return;
+
+    container.innerHTML = "";
     if (games.length === 0) {
       container.innerHTML = "<p>No games played on this date.</p>";
       return;
     }
 
-    let html = "";
     games.forEach(g => {
-      const vTeam = g[3], hTeam = g[6], vLine = g[19], hLine = g[20];
-      const vR = g[9], vH = g[22], vE = g[46], vLOB = g[37];
-      const hR = g[10], hH = g[50], hE = g[74], hLOB = g[65];
+      const clone = template.content.cloneNode(true);
+      const vAbbr = g[3], hAbbr = g[6];
+      const vName = TEAM_NAMES[vAbbr] || vAbbr;
+      const hName = TEAM_NAMES[hAbbr] || hAbbr;
+      const vLine = g[19], hLine = g[20];
       const maxInnings = Math.max(vLine.length, hLine.length);
 
-      html += `<table border="1" style="margin-bottom: 20px; margin-right: 20px; border-collapse: collapse; display: inline-table;">
-        <thead><tr><th>Team</th>${Array.from({length: maxInnings}).map((_, i) => `<th>${i+1}</th>`).join('')}<th>R</th><th>H</th><th>E</th><th>LOB</th></tr></thead>
-        <tbody>
-          <tr><td>${vTeam}</td>${vLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}<td><strong>${vR}</strong></td><td>${vH}</td><td>${vE}</td><td>${vLOB}</td></tr>
-          <tr><td>${hTeam}</td>${hLine.padEnd(maxInnings, ' ').split('').map(c => `<td>${c === ' ' ? '' : c}</td>`).join('')}<td><strong>${hR}</strong></td><td>${hH}</td><td>${hE}</td><td>${hLOB}</td></tr>
-        </tbody></table>`;
+      // Set paragraph header
+      clone.querySelector(".teams-names-display").textContent = `${vName} at ${hName}`;
+
+      // Set cell names
+      clone.querySelector(".v-row .name").textContent = vAbbr;
+      clone.querySelector(".h-row .name").textContent = hAbbr;
+
+      const fill = (rowCls, R, H, E, LOB) => {
+        const row = clone.querySelector(rowCls);
+        row.querySelector(".r strong").textContent = R;
+        row.querySelector(".h").textContent = H;
+        row.querySelector(".e").textContent = E;
+        row.querySelector(".lob").textContent = LOB;
+        return row;
+      };
+
+      const vRow = fill(".v-row", g[9], g[22], g[46], g[37]);
+      const hRow = fill(".h-row", g[10], g[50], g[74], g[65]);
+
+      const head = clone.querySelector(".header-row");
+      const vNameCell = vRow.querySelector(".name");
+      const hNameCell = hRow.querySelector(".name");
+
+      for (let i = 0; i < maxInnings; i++) {
+        head.children[0].insertAdjacentHTML('afterend', `<th>${maxInnings - i}</th>`);
+        vNameCell.insertAdjacentHTML('afterend', `<td>${vLine[maxInnings - 1 - i] || ''}</td>`);
+        hNameCell.insertAdjacentHTML('afterend', `<td>${hLine[maxInnings - 1 - i] || ''}</td>`);
+      }
+
+      container.appendChild(clone);
     });
-    container.innerHTML = html;
   }
 
   function renderWildcard(stats) {
@@ -118,12 +156,13 @@
         .sort((a, b) => b.p - a.p || b.w - a.w);
 
       const tbody = document.getElementById(`${lg}_WILDCARD`);
+      if (!tbody) return;
       tbody.innerHTML = "";
 
       const baseW = wcTeams[2]?.w || 0, baseL = wcTeams[2]?.l || 0;
 
       wcTeams.forEach((team, i) => {
-        const teamName = document.getElementById(team.id).cells[0].textContent;
+        const teamName = TEAM_NAMES[team.id] || team.id;
         let gb = i <= 2 ? "—" : ((baseW - team.w) + (team.l - baseL)) / 2;
         tbody.innerHTML += `<tr><td>${teamName}</td><td>${team.w}</td><td>${team.l}</td><td>${team.p.toFixed(3)}</td><td>${gb}</td></tr>`;
       });
