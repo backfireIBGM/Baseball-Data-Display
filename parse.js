@@ -26,7 +26,7 @@
     const selectedDateStr = picker.value.replace(/-/g, "");
 
     try {
-      const response = await fetch("data2025.txt");
+      const response = await fetch("games2025.txt");
       const text = await response.text();
       const lines = text.split("\n").filter((line) => line.trim() !== "");
 
